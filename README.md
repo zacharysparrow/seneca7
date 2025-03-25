@@ -7,7 +7,7 @@
   <h3 align="center">The Seneca 7</h3>
 
   <p align="center">
-    Results for the 2016-2024 Seneca 7 race.
+    Results for the 2016-2024 Seneca 7 relay race
   </p>
 </div>
 
