@@ -8,7 +8,7 @@ import polyline_utils as plu
 import sqlite3
 from pathlib import Path
 
-Path('seneca7_data.db').touch()
+Path('data/seneca7_data.db').touch()
 race_length = 77.7
 main_data = requests.get("http://www.seneca7.com/results.html")
 soup = bs(main_data.content, 'html.parser')
@@ -235,7 +235,7 @@ runner_df['place'] = runner_df.index.map(team_place)
 ######
 
 ### Write to SQLite Database ###
-conn = sqlite3.connect('seneca7_data.db')
+conn = sqlite3.connect('data/seneca7_data.db')
 c = conn.cursor()
 
 c.execute("CREATE TABLE runners (team_id int, bib_number int, category text, team_name text, place int, start_time int, year int, bikers text)")
