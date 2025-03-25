@@ -1,11 +1,3 @@
-# fix places
-
-# how to save data?
-### for runners, can use one table with rows according to runner id and columns entries
-# for elapsed time, three tables: c, p, and t
-# for waypoints, one table with waypoint id as rows, waypoint info (including number and year) as columns
-# for paths, one table with year as rows, path as column
-
 import requests
 import js2py
 from copy import copy
@@ -15,6 +7,7 @@ from bs4 import BeautifulSoup as bs
 import polyline_utils as plu
 import sqlite3
 from pathlib import Path
+#import numpy as np
 Path('seneca7_data.db').touch()
 
 race_length = 77.7
@@ -121,7 +114,7 @@ for y in years:
             i['w'] = all_data[y]['meta'][2][i['w']]
         except:
             pass
-        i['n'].replace("â\x80\x99", "\'")
+        i['n'] = i['n'].replace("â\x80\x99", "\'")
         if 'p' in i:
             i['p'] = i.pop('p')
         if 's' in i:
@@ -199,11 +192,10 @@ for i in time_data:
 t_df = pd.DataFrame(t_data).T
 c_df = pd.DataFrame(c_data).T
 p_df = pd.DataFrame(p_data).T
-p_df['c0'] = 0
-c_df['c0'] = 0
+p_df['c0'] = float('nan')
+c_df['c0'] = float('nan')
 c_df['overall'] = (t_df['c21']-t_df['c0'])/60/race_length #c_df.iloc[:,1:].mean(axis=1)
 p_df = c_df.map(lambda x: 60/(x+1E-8))
-p_df['c0'] = 0.0
 filter_cond = c_df.iloc[:,1:].min(axis=1) < 3.75
 bad_ids = p_df[filter_cond].index.to_list()
 
@@ -231,14 +223,13 @@ for name, group in grouped_data:
 
 team_place = {}
 for g in grouped_ids:
-    tot_times = t_df['c0'][g] - t_df['c21'][g]
-    placements = sorted(range(len(tot_times)), key=lambda k: tot_times[k])
-    for i,ids in enumerate(g):
-#        runner_df[ids] = placements[i] + 1
-        team_place[ids] = placements[i] + 1
+    tot_times = t_df['c21'][g] - t_df['c0'][g]
+    sorted_times = sorted(tot_times.keys(), key=lambda k: tot_times[k])
+    placements = {k: p for p,k in enumerate(sorted_times)}
+    for ids,place in placements.items():
+        team_place[ids] = place + 1
 
 runner_df['place'] = runner_df.index.map(team_place)
-print(runner_df)
 
 conn = sqlite3.connect('seneca7_data.db')
 c = conn.cursor()
