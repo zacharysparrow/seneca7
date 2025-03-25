@@ -1,6 +1,4 @@
-# c is min/mile pace
-# p ~ 1/(c*60*dist_conv) (units are dist/s, dist units same as those used by waypoint)
-#convert runners p into a pace that makes sense
+# fix places
 
 # how to save data?
 ### for runners, can use one table with rows according to runner id and columns entries
@@ -18,6 +16,8 @@ import polyline_utils as plu
 import sqlite3
 from pathlib import Path
 Path('seneca7_data.db').touch()
+
+race_length = 77.7
 
 main_data = requests.get("http://www.seneca7.com/results.html")
 soup = bs(main_data.content, 'html.parser')
@@ -111,7 +111,7 @@ for i in race_ids:
 #            print(list(elapsed.items())[0]) 
         except:
             continue
-gs = []
+
 years = list(all_data.keys())
 for y in years:
     for i in all_data[y]['runners'].values():
@@ -196,30 +196,54 @@ for i in time_data:
     c_data[i] = clist
     p_data[i] = plist
 
-def convert(x):
-    if x < 0.9:
-        return x/60/dist_conv 
-    else:
-        return x
-
 t_df = pd.DataFrame(t_data).T
 c_df = pd.DataFrame(c_data).T
 p_df = pd.DataFrame(p_data).T
 p_df['c0'] = 0
 c_df['c0'] = 0
+c_df['overall'] = (t_df['c21']-t_df['c0'])/60/race_length #c_df.iloc[:,1:].mean(axis=1)
+p_df = c_df.map(lambda x: 60/(x+1E-8))
+p_df['c0'] = 0.0
+filter_cond = c_df.iloc[:,1:].min(axis=1) < 3.75
+bad_ids = p_df[filter_cond].index.to_list()
+
 runner_df = pd.DataFrame(runner_data).T
-runner_df['p'] = runner_df['p'].apply(convert)
+runner_df.drop('p', axis=1, inplace=True)
+runner_df['place'] = 1
 waypoint_df = pd.DataFrame(waypoints).T
-runner_df.rename(columns={'Unnamed: 0': 'index', 'b': 'bib_number', 'c': 'category', 'n': 'team_name', 'w': 'start_time', 'y': 'year', 'p': 'pace', 'bike': 'bikers'}, inplace=True)
+
+runner_df.drop(bad_ids, inplace=True)
+t_df.drop(bad_ids, inplace=True)
+c_df.drop(bad_ids, inplace=True)
+p_df.drop(bad_ids, inplace=True)
+
+runner_df.rename(columns={'Unnamed: 0': 'index', 'b': 'bib_number', 'c': 'category', 'n': 'team_name', 'w': 'start_time', 'y': 'year', 'bike': 'bikers'}, inplace=True)
+runner_df['category'] = runner_df['category'].str.lower().replace("open","men",regex=True).replace("team","",regex=True).replace("solo","",regex=True)
 t_df.rename(columns={'Unnamed: 0': 'index'}, inplace=True)
 c_df.rename(columns={'Unnamed: 0': 'index'}, inplace=True)
 p_df.rename(columns={'Unnamed: 0': 'index'}, inplace=True)
 waypoint_df.rename(columns={'Unnamed: 0': 'index'}, inplace=True)
 
+grouped_data = runner_df.groupby(["year","category"])
+grouped_ids = []
+for name, group in grouped_data:
+    grouped_ids.append(group.index)
+
+team_place = {}
+for g in grouped_ids:
+    tot_times = t_df['c0'][g] - t_df['c21'][g]
+    placements = sorted(range(len(tot_times)), key=lambda k: tot_times[k])
+    for i,ids in enumerate(g):
+#        runner_df[ids] = placements[i] + 1
+        team_place[ids] = placements[i] + 1
+
+runner_df['place'] = runner_df.index.map(team_place)
+print(runner_df)
+
 conn = sqlite3.connect('seneca7_data.db')
 c = conn.cursor()
 
-c.execute("CREATE TABLE runners (team_id int, bib_number int, category text, team_name text, start_time int, year int, pace float, bikers text)")
+c.execute("CREATE TABLE runners (team_id int, bib_number int, category text, team_name text, place int, start_time int, year int, bikers text)")
 runner_df.to_sql('runners', conn, if_exists='append', index=True, index_label='team_id')
 
 #sql_column_list = []
@@ -229,9 +253,9 @@ runner_df.to_sql('runners', conn, if_exists='append', index=True, index_label='t
 #print("CREATE TABLE time (team_id int, "+sql_column_str+")")
 c.execute("CREATE TABLE time (team_id int, c0 float, c1 float, c2 float, c3 float, c4 float, c5 float, c6 float, c7 float, c8 float, c9 float, c10 float, c11 float, c12 float, c13 float, c14 float, c15 float, c16 float, c17 float, c18 float, c19 float, c20 float, c21 float)")
 t_df.to_sql('time', conn, if_exists='append', index=True, index_label='team_id')
-c.execute("CREATE TABLE pace (team_id int, c0 float, c1 float, c2 float, c3 float, c4 float, c5 float, c6 float, c7 float, c8 float, c9 float, c10 float, c11 float, c12 float, c13 float, c14 float, c15 float, c16 float, c17 float, c18 float, c19 float, c20 float, c21 float)")
+c.execute("CREATE TABLE pace (team_id int, c0 float, c1 float, c2 float, c3 float, c4 float, c5 float, c6 float, c7 float, c8 float, c9 float, c10 float, c11 float, c12 float, c13 float, c14 float, c15 float, c16 float, c17 float, c18 float, c19 float, c20 float, c21 float, overall float)")
 c_df.to_sql('pace', conn, if_exists='append', index=True, index_label='team_id')
-c.execute("CREATE TABLE speed (team_id int, c0 float, c1 float, c2 float, c3 float, c4 float, c5 float, c6 float, c7 float, c8 float, c9 float, c10 float, c11 float, c12 float, c13 float, c14 float, c15 float, c16 float, c17 float, c18 float, c19 float, c20 float, c21 float)")
+c.execute("CREATE TABLE speed (team_id int, c0 float, c1 float, c2 float, c3 float, c4 float, c5 float, c6 float, c7 float, c8 float, c9 float, c10 float, c11 float, c12 float, c13 float, c14 float, c15 float, c16 float, c17 float, c18 float, c19 float, c20 float, c21 float, overall float)")
 p_df.to_sql('speed', conn, if_exists='append', index=True, index_label='team_id')
 
 waypoint_df.drop('color', axis=1, inplace=True)
