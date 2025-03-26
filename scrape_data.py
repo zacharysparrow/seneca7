@@ -196,8 +196,11 @@ p_df['c0'] = float('nan') #pace and time at start are not defined
 c_df['c0'] = float('nan') 
 c_df['overall'] = (t_df['c21']-t_df['c0'])/60/race_length #compute pace for whole race 
 p_df = c_df.map(lambda x: 60/(x+1E-8)) #recompute speed for consistency with pace
-filter_cond = c_df.iloc[:,1:].min(axis=1) < 3.75 #filter out incorrect entries... nobody in this race broke the world record mile time
-bad_ids = p_df[filter_cond].index.to_list()
+filter_cond1 = c_df.iloc[:,1:].min(axis=1) < 3.75 #filter out incorrect entries... nobody in this race broke the world record mile time
+filter_cond2 = c_df.iloc[:,1:].max(axis=1) > 60.0
+bad_ids = p_df[filter_cond1].index.to_list()
+bad_ids2 = p_df[filter_cond2].index.to_list()
+bad_ids = bad_ids + bad_ids2
 
 runner_df = pd.DataFrame(runner_data).T
 runner_df.drop('p', axis=1, inplace=True)
@@ -210,7 +213,7 @@ c_df.drop(bad_ids, inplace=True)
 p_df.drop(bad_ids, inplace=True)
 
 runner_df.rename(columns={'Unnamed: 0': 'index', 'b': 'bib_number', 'c': 'category', 'n': 'team_name', 'w': 'start_time', 'y': 'year', 'bike': 'bikers'}, inplace=True)
-runner_df['category'] = runner_df['category'].str.lower().replace("open","men",regex=True).replace("team","",regex=True).replace("solo","",regex=True)
+runner_df['category'] = runner_df['category'].str.lower().replace("open","male",regex=True).replace("team","",regex=True).replace("solo","",regex=True)
 t_df.rename(columns={'Unnamed: 0': 'index'}, inplace=True)
 c_df.rename(columns={'Unnamed: 0': 'index'}, inplace=True)
 p_df.rename(columns={'Unnamed: 0': 'index'}, inplace=True)
@@ -254,4 +257,11 @@ waypoint_df.to_sql('waypoints', conn, if_exists='append', index=True, index_labe
 
 c.execute("CREATE TABLE paths (year int, path int, waypoint int, lat float, lon float)")
 paths_df.to_sql('paths', conn, if_exists='append', index=False)
+
+runner_df.to_csv('data/runners.csv', index=True)
+t_df.to_csv('data/times.csv', index=True)
+c_df.to_csv('data/paces.csv', index=True)
+p_df.to_csv('data/speeds.csv', index=True)
+waypoint_df.to_csv('data/waypoints.csv', index=True)
+paths_df.to_csv('data/paths.csv', index=True)
 ######
