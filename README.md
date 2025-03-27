@@ -25,7 +25,7 @@ The goal of this project is to scrape, clean, and visualize the data using Table
 Explore the data on Tableau Public! Here's a sneak peek...
 <div align="center">
   <a href="https://public.tableau.com/views/TheSeneca7/TheSeneca7?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link">
-    <img src="assets/seneca7_sneak_peek" alt="Tableau Viz" width="1000">
+    <img src="assets/seneca7_sneak_peek.png" alt="Tableau Viz" width="1000">
 </div>
 
 
