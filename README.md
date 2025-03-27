@@ -21,12 +21,16 @@ The goal of this project is to scrape, clean, and visualize the data using Table
 <img src="assets/seneca7_map.png" alt="Map">
 
 
+## Explore the Data
+Explore the data on Tableau Public! Here's a sneak peek...
+<div align="center">
+  <a href="https://public.tableau.com/views/TheSeneca7/TheSeneca7?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link">
+    <img src="assets/seneca7_sneak_peek" alt="Tableau Viz" width="1000">
+</div>
+
+
 ## Obtaining the Data
 If you would like the data, simply download the SQLite database from data/seneca7_data.db.
-
-
-## The Visualization
-Visualization of the data coming soon...
 
 
 ## Scraping the Data
