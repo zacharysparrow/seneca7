@@ -29,7 +29,7 @@ Explore the data on Tableau Public! Here's a sneak peek...
     <img src="assets/seneca7_sneak_peek.png" alt="Tableau Viz" width="1000">
 </div>
 
-You can filter the data by year and race leg by adjusting the slider and clicking segments on the map, respectively.
+Click on the image to explore the data on Tableau Public. You can filter the data by year and race leg by adjusting the slider and clicking segments on the map, respectively.
 
 
 ## Obtaining the Data
